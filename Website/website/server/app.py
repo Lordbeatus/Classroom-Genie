@@ -56,19 +56,15 @@ def chat():
 
     # Call the model using Hugging Face Inference API
     try:
-        completion = client.chat.completions.create(
+        response = client.text_generation(
+            prompt,
             model=MODEL_NAME,
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
+            max_new_tokens=500,
+            temperature=0.7,
+            return_full_text=False,
+            stream=False
         )
-
-        # Extract the response
-        response_text = completion.choices[0].message.content if completion.choices else "No response from model."
-
+        response_text = response if isinstance(response, str) else response.generated_text
     except Exception as e:
         response_text = f"Error calling model: {str(e)}"
 
