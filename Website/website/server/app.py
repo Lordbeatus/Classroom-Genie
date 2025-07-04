@@ -1,9 +1,9 @@
 import os
 import secrets
+import requests
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 from dotenv import load_dotenv
-from huggingface_hub import InferenceClient
 import sys
 
 # Ensure parent directory is in path for prompts import
@@ -17,9 +17,10 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", secrets.token_hex(32))
 CORS(app)
 
 HF_TOKEN = os.environ.get("HUGGINGFACE_API_KEY")
-client = InferenceClient(token=HF_TOKEN)
+API_URL = "https://api-inference.huggingface.co/models/"
+HEADERS = {"Authorization": f"Bearer {HF_TOKEN}"}
 
-MODEL_NAME = "google/flan-t5-large"  # Instruction-tuned for educational Q&A
+MODEL_NAME = "microsoft/DialoGPT-medium"  # Let's try a model that definitely works
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
@@ -54,29 +55,43 @@ def chat():
     else:
         prompt = base_prompt
 
-    # Call the model using Hugging Face Inference API
+    # Call the model using Hugging Face Inference API directly
     try:
-        response = client.text_generation(
-            prompt,
-            model=MODEL_NAME,
-            max_new_tokens=500,
-            temperature=0.7,
-            return_full_text=False,
-            stream=False
-        )
-        response_text = response if isinstance(response, str) else response.generated_text
+        payload = {
+            "inputs": prompt,
+            "parameters": {
+                "max_new_tokens": 500,
+                "temperature": 0.7,
+                "return_full_text": False
+            }
+        }
+        
+        response = requests.post(API_URL + MODEL_NAME, headers=HEADERS, json=payload)
+        
+        if response.status_code == 200:
+            result = response.json()
+            if isinstance(result, list) and len(result) > 0:
+                response_text = result[0].get("generated_text", "No response generated")
+            else:
+                response_text = str(result)
+        else:
+            raise Exception(f"API returned status {response.status_code}: {response.text}")
+            
     except Exception as e:
-        # If the primary model fails, try a fallback
+        # If the primary model fails, try a simple fallback
         print(f"Primary model failed: {e}")
         try:
-            fallback_response = client.text_generation(
-                prompt,
-                model="google/flan-t5-base",  # Smaller education-focused fallback
-                max_new_tokens=200,
-                temperature=0.7,
-                return_full_text=False
-            )
-            response_text = f"[Using fallback model] {fallback_response if isinstance(fallback_response, str) else fallback_response.generated_text}"
+            fallback_payload = {"inputs": prompt}
+            fallback_response = requests.post(API_URL + "gpt2", headers=HEADERS, json=fallback_payload)
+            
+            if fallback_response.status_code == 200:
+                fallback_result = fallback_response.json()
+                if isinstance(fallback_result, list) and len(fallback_result) > 0:
+                    response_text = f"[Using fallback] {fallback_result[0].get('generated_text', 'No response')}"
+                else:
+                    response_text = f"[Using fallback] {str(fallback_result)}"
+            else:
+                response_text = f"Error with both models. Primary: {str(e)}, Fallback status: {fallback_response.status_code}"
         except Exception as fallback_error:
             response_text = f"Error with both models. Primary: {str(e)}, Fallback: {str(fallback_error)}"
 
