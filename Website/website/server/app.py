@@ -19,7 +19,7 @@ CORS(app)
 HF_TOKEN = os.environ.get("HUGGINGFACE_API_KEY")
 client = InferenceClient(token=HF_TOKEN)
 
-MODEL_NAME = "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B"  # Your original model
+MODEL_NAME = "google/flan-t5-large"  # Good for educational Q&A, available on free tier
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
