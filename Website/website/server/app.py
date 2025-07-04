@@ -17,9 +17,9 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", secrets.token_hex(32))
 CORS(app)
 
 HF_TOKEN = os.environ.get("HUGGINGFACE_API_KEY")
-client = InferenceClient(api_key=HF_TOKEN)
+client = InferenceClient(token=HF_TOKEN)
 
-MODEL_NAME = "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B"  # Or another supported model
+MODEL_NAME = "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B"  # Your original model
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
@@ -54,19 +54,19 @@ def chat():
     else:
         prompt = base_prompt
 
-    # Call the model
-    completion = client.chat.completions.create(
-        model=MODEL_NAME,
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-    )
-
-    # Extract the response
-    response_text = completion.choices[0].message.content if completion.choices else "No response from model."
+    # Call the model using Hugging Face Inference API
+    try:
+        response = client.text_generation(
+            prompt,
+            model=MODEL_NAME,
+            max_new_tokens=500,
+            temperature=0.7,
+            return_full_text=False,
+            stream=False
+        )
+        response_text = response if isinstance(response, str) else response.generated_text
+    except Exception as e:
+        response_text = f"Error calling model: {str(e)}"
 
     # No more post-processing for math: let the frontend/MathJax handle all LaTeX/Markdown
     return jsonify({'response': response_text})
