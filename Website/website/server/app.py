@@ -19,7 +19,7 @@ CORS(app)
 HF_TOKEN = os.environ.get("HUGGINGFACE_API_KEY")
 client = InferenceClient(token=HF_TOKEN)
 
-MODEL_NAME = "google/flan-t5-large"  # Good for educational Q&A, available on free tier
+MODEL_NAME = "microsoft/DialoGPT-large"  # Reliable choice for chat applications
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
@@ -66,7 +66,19 @@ def chat():
         )
         response_text = response if isinstance(response, str) else response.generated_text
     except Exception as e:
-        response_text = f"Error calling model: {str(e)}"
+        # If the primary model fails, try a fallback
+        print(f"Primary model failed: {e}")
+        try:
+            fallback_response = client.text_generation(
+                prompt,
+                model="gpt2",  # Simple fallback that's always available
+                max_new_tokens=200,
+                temperature=0.7,
+                return_full_text=False
+            )
+            response_text = f"[Using fallback model] {fallback_response if isinstance(fallback_response, str) else fallback_response.generated_text}"
+        except Exception as fallback_error:
+            response_text = f"Error with both models. Primary: {str(e)}, Fallback: {str(fallback_error)}"
 
     # No more post-processing for math: let the frontend/MathJax handle all LaTeX/Markdown
     return jsonify({'response': response_text})
