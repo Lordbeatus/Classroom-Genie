@@ -17,6 +17,7 @@
     "react-scripts": "^5.0.1",
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0",
+    "serve": "^14.2.0",
     "toast": "^0.5.4"
   },
   "scripts": {

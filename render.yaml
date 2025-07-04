@@ -1,0 +1,22 @@
+services:
+  # Backend API
+  - type: web
+    name: classroom-genie-api
+    env: python
+    buildCommand: pip install -r Website/website/server/requirements.txt
+    startCommand: gunicorn --chdir Website/website/server app:app
+    envVars:
+      - key: HUGGINGFACE_API_KEY
+        sync: false
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+    
+  # Frontend
+  - type: web
+    name: classroom-genie-frontend
+    env: node
+    buildCommand: cd Website/website/client && npm install && npm run build
+    startCommand: cd Website/website/client && npx serve -s build -l 3000
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://classroom-genie-api.onrender.com
