@@ -19,7 +19,7 @@ CORS(app)
 HF_TOKEN = os.environ.get("HUGGINGFACE_API_KEY")
 client = InferenceClient(token=HF_TOKEN)
 
-MODEL_NAME = "microsoft/DialoGPT-large"  # Reliable choice for chat applications
+MODEL_NAME = "google/flan-t5-large"  # Instruction-tuned for educational Q&A
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
@@ -71,7 +71,7 @@ def chat():
         try:
             fallback_response = client.text_generation(
                 prompt,
-                model="gpt2",  # Simple fallback that's always available
+                model="google/flan-t5-base",  # Smaller education-focused fallback
                 max_new_tokens=200,
                 temperature=0.7,
                 return_full_text=False
