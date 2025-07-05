@@ -1,9 +1,9 @@
 import os
 import secrets
+import requests
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 from dotenv import load_dotenv
-from huggingface_hub import InferenceClient
 import sys
 
 # Ensure parent directory is in path for prompts import
@@ -16,10 +16,9 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", secrets.token_hex(32))
 CORS(app)
 
-HF_TOKEN = os.environ.get("HUGGINGFACE_API_KEY")
-client = InferenceClient(token=HF_TOKEN)
-
-MODEL_NAME = "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B"  # Back to your original model
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL = "llama3-70b-8192"
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
@@ -52,21 +51,32 @@ def chat():
         # Prepend the engineered instructions to the history
         prompt = base_prompt + "\n" + prompt
     else:
+        # Build the chat prompt using your prompt engineering
         prompt = base_prompt
 
-    # Call the model using Hugging Face Inference API
+    # Call Groq API
     try:
-        response = client.text_generation(
-            prompt,
-            model=MODEL_NAME,
-            max_new_tokens=500,
-            temperature=0.7,
-            return_full_text=False,
-            stream=False
-        )
-        response_text = response if isinstance(response, str) else response.generated_text
+        headers = {
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": GROQ_MODEL,
+            "messages": [
+                {"role": "system", "content": "You are a helpful, hint-giving tutor. Never give direct answers, only hints and encouragement."},
+                {"role": "user", "content": prompt}
+            ],
+            "max_tokens": 500,
+            "temperature": 0.7
+        }
+        groq_response = requests.post(GROQ_API_URL, headers=headers, json=payload)
+        if groq_response.status_code == 200:
+            data = groq_response.json()
+            response_text = data["choices"][0]["message"]["content"]
+        else:
+            response_text = f"Groq API error: {groq_response.status_code} {groq_response.text}"
     except Exception as e:
-        response_text = f"Error calling model: {str(e)}"
+        response_text = f"Error calling Groq API: {str(e)}"
 
     # No more post-processing for math: let the frontend/MathJax handle all LaTeX/Markdown
     return jsonify({'response': response_text})
