@@ -9,6 +9,7 @@ function stripThinkTags(text) {
   return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 }
 
+
 function Chatbot() {
   const [subject, setSubject] = useState('');
   const [chatStarted, setChatStarted] = useState(false);
@@ -68,70 +69,76 @@ function Chatbot() {
   };
 
   return (
-    <Box maxW="md" mx="auto" mt={10} p={6} borderRadius="lg" boxShadow="lg" bg="white">
-      <Heading mb={4} textAlign="center" color="purple.600">Classroom Genie</Heading>
-      <VStack spacing={4} align="stretch" h="400px" overflowY="auto" bg="gray.50" borderRadius="md" p={3}>
-        {messages.map((msg, i) => (
-          <HStack
-            key={i}
-            alignSelf={msg.sender === 'bot' ? 'flex-start' : 'flex-end'}
-            spacing={2}
-            mb={1}
-          >
-            {msg.sender === 'bot' && <Avatar size="sm" icon={<FaRobot />} bg="purple.200" />}
-            <Box
-              bg={msg.sender === 'bot' ? 'purple.100' : 'green.100'}
-              px={4}
-              py={2}
-              borderRadius="xl"
-              maxW="70%"
-              fontSize="md"
-              boxShadow="sm"
-            >
-              <ReactMarkdown>
-                {stripThinkTags(msg.text)}
-              </ReactMarkdown>
-            </Box>
-            {msg.sender === 'user' && <Avatar size="sm" icon={<FaUser />} bg="green.200" />}
-          </HStack>
-        ))}
-        {loading && (
-          <HStack alignSelf="flex-start">
-            <Avatar size="sm" icon={<FaRobot />} bg="purple.200" />
-            <Spinner color="purple.500" size="sm" />
-            <Text color="gray.500" fontSize="sm">Genie is thinking...</Text>
-          </HStack>
-        )}
-        <div ref={chatBottomRef} />
-      </VStack>
-      {!chatStarted ? (
-        <form onSubmit={handleSubjectSubmit}>
-          <HStack mt={4}>
-            <Input
-              value={subject}
-              onChange={e => setSubject(e.target.value)}
-              placeholder="Enter a subject"
-              required
-              bg="white"
-            />
-            <Button colorScheme="purple" type="submit">Start</Button>
-          </HStack>
-        </form>
-      ) : (
-        <form onSubmit={handleChatSubmit}>
-          <HStack mt={4}>
-            <Input
-              value={userQuestion}
-              onChange={e => setUserQuestion(e.target.value)}
-              placeholder="Ask a question..."
-              required
-              disabled={loading}
-              bg="white"
-            />
-            <Button colorScheme="purple" type="submit" isLoading={loading}>Send</Button>
-          </HStack>
-        </form>
-      )}
+    <Box w="100vw" h="100vh" minH="100vh" bg="gray.50" display="flex" flexDirection="column" alignItems="center" justifyContent="center" p={0} m={0}>
+      <Box w={{ base: '100%', md: '70%', lg: '50%' }} h={{ base: '100%', md: '90%' }} maxH="100vh" display="flex" flexDirection="column" boxShadow="lg" borderRadius="xl" bg="white" p={{ base: 2, md: 6 }}>
+        <Heading mb={4} textAlign="center" color="purple.600" fontSize={{ base: '2xl', md: '3xl' }}>Classroom Genie</Heading>
+        <Box flex={1} overflowY="auto" bg="gray.50" borderRadius="md" p={3} mb={2}>
+          <VStack spacing={4} align="stretch">
+            {messages.map((msg, i) => (
+              <HStack
+                key={i}
+                alignSelf={msg.sender === 'bot' ? 'flex-start' : 'flex-end'}
+                spacing={2}
+                mb={1}
+              >
+                {msg.sender === 'bot' && <Avatar size="sm" icon={<FaRobot />} bg="purple.200" />}
+                <Box
+                  bg={msg.sender === 'bot' ? 'purple.100' : 'green.100'}
+                  px={4}
+                  py={2}
+                  borderRadius="xl"
+                  maxW={{ base: '90%', md: '70%' }}
+                  fontSize="md"
+                  boxShadow="sm"
+                >
+                  <ReactMarkdown>
+                    {stripThinkTags(msg.text)}
+                  </ReactMarkdown>
+                </Box>
+                {msg.sender === 'user' && <Avatar size="sm" icon={<FaUser />} bg="green.200" />}
+              </HStack>
+            ))}
+            {loading && (
+              <HStack alignSelf="flex-start">
+                <Avatar size="sm" icon={<FaRobot />} bg="purple.200" />
+                <Spinner color="purple.500" size="sm" />
+                <Text color="gray.500" fontSize="sm">Genie is thinking...</Text>
+              </HStack>
+            )}
+            <div ref={chatBottomRef} />
+          </VStack>
+        </Box>
+        <Box mt={2}>
+          {!chatStarted ? (
+            <form onSubmit={handleSubjectSubmit}>
+              <HStack>
+                <Input
+                  value={subject}
+                  onChange={e => setSubject(e.target.value)}
+                  placeholder="Enter a subject"
+                  required
+                  bg="white"
+                />
+                <Button colorScheme="purple" type="submit">Start</Button>
+              </HStack>
+            </form>
+          ) : (
+            <form onSubmit={handleChatSubmit}>
+              <HStack>
+                <Input
+                  value={userQuestion}
+                  onChange={e => setUserQuestion(e.target.value)}
+                  placeholder="Ask a question..."
+                  required
+                  disabled={loading}
+                  bg="white"
+                />
+                <Button colorScheme="purple" type="submit" isLoading={loading}>Send</Button>
+              </HStack>
+            </form>
+          )}
+        </Box>
+      </Box>
     </Box>
   );
 }
